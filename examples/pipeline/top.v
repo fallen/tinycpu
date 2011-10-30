@@ -51,6 +51,11 @@ begin
 				ack_to_pipeline_reg <= 1;
 				state <= PIPELINE_IS_ACKED;
 			end
+			else
+			begin
+				state <= IDLE;
+				ack_to_pipeline_reg <= 0;
+			end
 		end
 
 		PIPELINE_IS_ACKED:
