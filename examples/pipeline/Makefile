@@ -1,5 +1,8 @@
 all: top
 
+run: all
+	vvp top
+
 top: top.v pipeline.v stage_A.v stage_B.v stage_C.v
 	iverilog -o $@ $^
 
