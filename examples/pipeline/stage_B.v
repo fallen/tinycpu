@@ -45,17 +45,16 @@ begin
 			begin
 				$display("stage_B got ACK form stage_C");
 				DOR_reg <= 0;
-				data_out_reg <= 0;
 				state <= IDLE;
 			end
 			else
 			begin
 				$display("stage_B waits for ACK from stage_C");
 				state <= WAITING_ACK;
-				data_out_reg <= data_in + 1;
 				DOR_reg <= 1;
 			end
 			
+			data_out_reg <= data_in + 1;
 			ack_prev_reg <= 0;
 		end
 
