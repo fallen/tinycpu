@@ -15,4 +15,9 @@ begin
 	end
 end
 
+initial
+begin
+	$readmemh("ram.data", mem);
+end
+
 endmodule

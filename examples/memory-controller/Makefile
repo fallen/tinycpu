@@ -6,6 +6,12 @@ run: all
 top: top.v ram.v memory_controller.v
 	iverilog -o $@ $^
 
+ram.data: genram
+	./genram > ram.data
+
+genram: genram.c
+	$(CC) $(CFLAGS) $^ -o $@
+
 clean:
 	$(RM) -rf top
 
