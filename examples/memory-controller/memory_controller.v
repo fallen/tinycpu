@@ -1,72 +1,173 @@
-module memory_controller(clk, 
-			 devices_mem_en, 
-			 device_1_mem_addr, 
-			 device_2_mem_addr, 
-			 device_1_mem_di, 
-			 device_2_mem_di, 
-			 devices_mem_we, 
+module memory_controller(clk,
+			 reset,
+			 devices_mem_en,
+			 device_1_mem_addr,
+			 device_2_mem_addr,
+			 device_3_mem_addr,
+			 device_1_mem_di,
+			 device_2_mem_di,
+			 device_3_mem_di,
+			 devices_mem_we,
+			 devices_do_ack,
 			 mem_do);
 
 input 	clk;
-input	[1:0] devices_mem_en;
+input	reset;
+input	[2:0] devices_mem_en;
 input	[7:0] device_1_mem_addr;
 input	[7:0] device_2_mem_addr;
+input	[7:0] device_3_mem_addr;
 input	[7:0] device_1_mem_di;
 input	[7:0] device_2_mem_di;
-input	[1:0] devices_mem_we;
+input	[7:0] device_3_mem_di;
+input	[2:0] devices_mem_we;
+output	[2:0] devices_do_ack;
 output	[7:0] mem_do;
+
+parameter DEVICE_1 = 3'd0;
+parameter DEVICE_2 = 3'd1;
+parameter DEVICE_3 = 3'd2;
+parameter NO_ONE = 3'b111;
 
 reg	mem_enable = 0;
 reg	[7:0] mem_addr = 7'd0;
 reg	[7:0] mem_di = 7'd0;
-reg	[2:0] current_slave = 3'd0;
+reg	[2:0] current_slave = NO_ONE;
 reg	mem_we = 0;
-
-parameter DEVICE_1 = 3'd0;
-parameter DEVICE_2 = 3'd1;
-parameter NO_ONE = 3'b111;
+reg	[2:0] serving_slave = 2'd0;
+reg	[2:0] devices_do_ack = 3'd0;
+reg	local_reset = 0;
+reg	local_reset2 = 0;
 
 always @(posedge clk)
 begin
-	if (current_slave == NO_ONE)
-		mem_enable <= 0;
+	local_reset <= reset;
+	local_reset2 <= local_reset;
+end
+
+always @(posedge clk)
+begin
+	if (reset)
+	begin
+		current_slave <= NO_ONE;
+	end
 	else
-		mem_enable <= devices_mem_en[0] | devices_mem_en[1];
-end
-
-always @(posedge clk)
-begin
-	case (current_slave)
-		
-	DEVICE_1:
 	begin
-		mem_addr <= device_1_mem_addr;
-		mem_di <= device_1_mem_di;
-		mem_we <= devices_mem_we[0];
-	end
-
-	DEVICE_2:
-	begin
-		mem_addr <= device_2_mem_addr;
-		mem_di <= device_2_mem_di;
-		mem_we <= devices_mem_we[1];
-	end
-
-	NO_ONE:
-	begin
-		mem_addr <= 7'd0;
-		mem_di <= 7'd0;
-		mem_we <= 0;
-	end
-
-	endcase
-end
-
-always @(posedge clk)
-begin
+		case (current_slave)
+		NO_ONE:
+		begin
+			if (devices_mem_en[0])
+                	begin
+                	        current_slave <= DEVICE_1;
+				mem_addr <= device_1_mem_addr;
+				mem_di <= device_1_mem_di;
+				mem_we <= devices_mem_we[0];
+                	end
+                	else if (devices_mem_en[1])
+                	begin
+                	        current_slave <= DEVICE_2;
+				mem_addr <= device_2_mem_addr;
+				mem_di <= device_2_mem_di;
+				mem_we <= devices_mem_we[1];
+                	end
+                	else if (devices_mem_en[2])
+                	begin
+                	        current_slave <= DEVICE_3;
+				mem_addr <= device_3_mem_addr;
+				mem_di <= device_3_mem_di;
+				mem_we <= devices_mem_we[2];
+                	end
+                	else
+                	begin
+                	        current_slave <= NO_ONE;
+				mem_addr <= 7'd0;
+				mem_di <= 7'd0;
+				mem_we <= 0;
+                	end
+                	devices_do_ack <= 3'b000;
+		end
 	
+		DEVICE_1:
+	        begin
+	                if (devices_mem_en[1])
+	                begin
+	                        current_slave <= DEVICE_2;
+				mem_addr <= device_2_mem_addr;
+				mem_di <= device_2_mem_di;
+				mem_we <= devices_mem_we[1];
+	                end
+	                else if (devices_mem_en[2])
+	                begin
+	                        current_slave <= DEVICE_3;
+				mem_addr <= device_3_mem_addr;
+				mem_di <= device_3_mem_di;
+				mem_we <= devices_mem_we[2];
+	                end
+                	else
+                	begin
+                	        current_slave <= NO_ONE;
+				mem_addr <= 7'd0;
+				mem_di <= 7'd0;
+				mem_we <= 0;
+                	end
+			devices_do_ack <= 3'b001;
+	        end
+
+		DEVICE_2:
+		begin
+			if (devices_mem_en[2])
+			begin
+				current_slave <= DEVICE_3;
+				mem_addr <= device_3_mem_addr;
+				mem_di <= device_3_mem_di;
+				mem_we <= devices_mem_we[2];
+			end
+			else if (devices_mem_en[0])
+			begin
+				current_slave <= DEVICE_1;
+				mem_addr <= device_1_mem_addr;
+				mem_di <= device_1_mem_di;
+				mem_we <= devices_mem_we[0];
+			end
+                	else
+                	begin
+                	        current_slave <= NO_ONE;
+				mem_addr <= 7'd0;
+				mem_di <= 7'd0;
+				mem_we <= 0;
+                	end
+			devices_do_ack <= 3'b010;
+		end
+
+		DEVICE_3:
+		begin
+			if (devices_mem_en[0])
+			begin
+				current_slave <= DEVICE_1;
+				mem_addr <= device_1_mem_addr;
+				mem_di <= device_1_mem_di;
+				mem_we <= devices_mem_we[0];
+			end
+			else if (devices_mem_en[1])
+			begin
+				current_slave <= DEVICE_2;
+				mem_addr <= device_2_mem_addr;
+				mem_di <= device_2_mem_di;
+				mem_we <= devices_mem_we[1];
+			end
+                	else
+                	begin
+                	        current_slave <= NO_ONE;
+				mem_addr <= 7'd0;
+				mem_di <= 7'd0;
+				mem_we <= 0;
+                	end
+			devices_do_ack <= 3'b100;
+		end
+		endcase
+	end
 end
 
-ram mem(clk, mem_enable, mem_addr, mem_di, mem_do, mem_we);
+ram mem(clk, ~reset, mem_addr, mem_di, mem_do, mem_we);
 
 endmodule
