@@ -1,4 +1,4 @@
-all: top
+all: top ram.data
 
 run: all
 	vvp top
@@ -6,8 +6,14 @@ run: all
 top: top.v pipeline.v instruction_fetch.v ram.v
 	iverilog -o $@ $^
 
+ram.data: genram
+	./genram > ram.data
+
+genram: genram.c
+	$(CC) $(CFLAGS) $^ -o $@
+
 clean:
-	$(RM) -rf top
+	$(RM) -rf top genram ram.data
 
 top.vcd: top
 	$(MAKE) run
