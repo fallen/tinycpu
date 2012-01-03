@@ -26,7 +26,7 @@ reg	[2:0] devices_mem_we = 3'd0;
 wire	[2:0] devices_do_ack;
 wire	mem_en;
 
-reg	[7:0] PC = 8'd0;
+reg	[7:0] PC = 8'd1;
 
 always 	#5 clk = !clk;
 
@@ -85,7 +85,7 @@ begin
 		ack_to_pipeline_reg <= 0;
 		pipeline_DIR <= 0;
 		data_in <= 0;
-		PC <= 0;
+		PC <= 8'd1;
 	end
 	else
 	begin

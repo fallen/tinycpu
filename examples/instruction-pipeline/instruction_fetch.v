@@ -45,6 +45,7 @@ begin
 		ack_prev_reg <= 0;
 		mem_addr_reg <= 8'd0;
 		mem_en_reg <= 0;
+		PC_reg <= 0;
 	end
 	else
 	begin
@@ -54,17 +55,19 @@ begin
 		begin
 			if (DIR)
 			begin
-				$display("Fetching opcode @ PC = %07X", PC_reg);
+				$display("Fetching opcode @ PC = %02X", data_in);
 				state <= WAITING_ACK_FROM_MEMORY_CONTROLLER;
 				ack_prev_reg <= 1;
 				mem_en_reg <= 1;
+				DOR_reg <= 0;
+				mem_addr_reg <= data_in;
 			end
 			else
 			begin
 				mem_en_reg <= 0;
+				DOR_reg <= 0;
+				mem_addr_reg <= data_in;
 			end
-			DOR_reg <= 0;
-			mem_addr_reg <= data_in;
 		end
 
 		WAITING_ACK_FROM_MEMORY_CONTROLLER:
