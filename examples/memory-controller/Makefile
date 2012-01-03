@@ -1,4 +1,4 @@
-all: top
+all: top ram.data
 
 run: all
 	vvp top
@@ -13,7 +13,7 @@ genram: genram.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
-	$(RM) -rf top
+	$(RM) -rf top genram ram.data
 
 top.vcd: top
 	$(MAKE) run
