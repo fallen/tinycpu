@@ -3,7 +3,7 @@ all: top ram.data
 run: all
 	vvp top
 
-top: top.v pipeline.v instruction_fetch.v ram.v
+top: top.v pipeline.v instruction_fetch.v ram.v memory_controller.v
 	iverilog -o $@ $^
 
 ram.data: genram

@@ -1,19 +1,39 @@
-module instruction_fetch(input clk, input reset, output DOR, input DIR, input ack_from_next, output ack_prev, input [7:0] data_in, output [7:0] data_out);
+module instruction_fetch(
+	input clk,
+	input reset,
+	output DOR,
+	input DIR,
+	input ack_from_next,
+	output ack_prev,
+	input [7:0] data_in,
+	output [7:0] data_out, 
+
+	output [7:0] mem_di, 
+	output mem_en, 
+	output [7:0] mem_addr, 
+	input [7:0] mem_do, 
+	input mem_do_ack
+);
 
 parameter IDLE = 2'd0;
 parameter WAITING_ACK_FROM_MEMORY_CONTROLLER = 2'd1;
+parameter WAITING_ACK_FROM_NEXT_STAGE = 2'd2;
 
 reg [1:0] state = IDLE;
 reg [7:0] data_out_reg = 8'd0;
 reg DOR_reg = 0;
 reg ack_prev_reg = 0;
 reg [7:0] data_in_buffer;
+reg [7:0] mem_addr_reg = 8'd0;
+reg mem_en_reg = 0;
 
 reg [7:0] PC_reg = 8'd0;
 
 assign data_out = data_out_reg;
 assign DOR = DOR_reg;
 assign ack_prev = ack_prev_reg;
+assign mem_addr = mem_addr_reg;
+assign mem_en = mem_en_reg;
 
 always @(posedge clk)
 begin
@@ -23,6 +43,8 @@ begin
 		data_out_reg <= 0;
 		DOR_reg <= 0;
 		ack_prev_reg <= 0;
+		mem_addr_reg <= 8'd0;
+		mem_en_reg <= 0;
 	end
 	else
 	begin
@@ -32,31 +54,52 @@ begin
 		begin
 			if (DIR)
 			begin
-				$display("Fetching opcode @ PC = %d", PC_reg);
+				$display("Fetching opcode @ PC = %07X", PC_reg);
 				state <= WAITING_ACK_FROM_MEMORY_CONTROLLER;
 				ack_prev_reg <= 1;
-				DOR_reg <= 1;
+				mem_en_reg <= 1;
 			end
-			data_in_buffer <= data_in;
-			data_out_reg <= data_in + 1;
+			else
+			begin
+				mem_en_reg <= 0;
+			end
+			DOR_reg <= 0;
+			mem_addr_reg <= data_in;
 		end
 
 		WAITING_ACK_FROM_MEMORY_CONTROLLER:
 		begin
+			if (mem_do_ack)
+			begin
+				data_out_reg <= mem_do;
+				DOR_reg <= 1;
+				mem_en_reg <= 0;
+				state <= WAITING_ACK_FROM_NEXT_STAGE;
+			end
+			else
+			begin
+				state <= WAITING_ACK_FROM_MEMORY_CONTROLLER;
+				DOR_reg <= 0;
+				mem_en_reg <= 1;
+			end
+			ack_prev_reg <= 0;
+		end
+
+		WAITING_ACK_FROM_NEXT_STAGE:
+		begin
 			if (ack_from_next)
 			begin
-				$display("stage_A got ACK form stage_B");
+				$display("instruction_fetcher got ACK from next stage");
 				DOR_reg <= 0;
+				mem_en_reg <= 0;
 				state <= IDLE;
 			end
 			else
 			begin
-				$display("stage_A waits for ACK from stage_B");
-				state <= WAITING_ACK_FROM_MEMORY_CONTROLLER;
 				DOR_reg <= 1;
+				mem_en_reg <= 0;
+				state <= WAITING_ACK_FROM_NEXT_STAGE;
 			end
-			
-			ack_prev_reg <= 0;
 		end
 
 		endcase
