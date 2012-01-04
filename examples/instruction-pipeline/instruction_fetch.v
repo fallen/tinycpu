@@ -26,14 +26,15 @@ reg ack_prev_reg = 0;
 reg [7:0] data_in_buffer;
 reg [7:0] mem_addr_reg = 8'd0;
 reg mem_en_reg = 0;
+reg [7:0] data_in_cached = 8'd0;
 
-reg [7:0] PC_reg = 8'd0;
 
 assign data_out = data_out_reg;
 assign DOR = DOR_reg;
 assign ack_prev = ack_prev_reg;
 assign mem_addr = mem_addr_reg;
 assign mem_en = mem_en_reg;
+assign mem_di = 8'd0;
 
 always @(posedge clk)
 begin
@@ -45,7 +46,7 @@ begin
 		ack_prev_reg <= 0;
 		mem_addr_reg <= 8'd0;
 		mem_en_reg <= 0;
-		PC_reg <= 0;
+		data_in_cached <= 8'd0;
 	end
 	else
 	begin
@@ -60,6 +61,7 @@ begin
 				ack_prev_reg <= 1;
 				mem_en_reg <= 1;
 				DOR_reg <= 0;
+				data_in_cached <= data_in;
 				mem_addr_reg <= data_in;
 			end
 			else
@@ -74,6 +76,7 @@ begin
 		begin
 			if (mem_do_ack)
 			begin
+				$display("instruction fetcher fetched 0x%02X from PC = 0x%02X", mem_do, data_in_cached);
 				data_out_reg <= mem_do;
 				DOR_reg <= 1;
 				mem_en_reg <= 0;

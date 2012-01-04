@@ -10,10 +10,14 @@ module pipeline(
 
 	output [7:0] device_1_mem_addr,
 	output [7:0] device_1_mem_di,
+	output device_1_burst_en,
 	output device_1_mem_en, 
 	input device_1_do_ack, 
 	input [7:0] mem_do
 );
+
+/* No burst access to ram allowed for now */
+assign device_1_burst_en = 0;
 
 wire DOR_A; /* Data Out Ready */
 wire ack_to_A;
