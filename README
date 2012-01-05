@@ -1,3 +1,4 @@
 Tiny CPU is a small 32-bit CPU done mostly as a hobby for educational purposes.
+The primary goal is to be binary compatible with non-FPU MIPS32 architecture
 
 A few examples are using 8-bit wide registers and data-path.
