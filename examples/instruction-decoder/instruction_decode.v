@@ -252,6 +252,22 @@ begin
 			state <= WRITE_BACK_TO_D;
 		end
 
+		INST_ADDU:
+		begin
+			$display("We execute addu %d, %d", S, T);
+			D <= S + T;
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_SUB:
+		begin
+			$display("We execute sub %d, %d", S, T);
+			/* We need to execute a trap on overflow */
+			// FIXME : TRAP ON OVERFLOW NOT IMPLEMENTED YET
+			D <= S - T;
+			state <= WRITE_BACK_TO_D;
+		end
+
 		WRITE_BACK_TO_D:
 		begin
 			$display("We write back %d to D", D);
