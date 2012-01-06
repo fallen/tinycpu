@@ -16,7 +16,8 @@ parameter INST_ADD = 7'd3;
 parameter INST_ADDU = 7'd4;
 parameter INST_SUB = 7'd5;
 parameter INST_ADDI = 7'd6;
-parameter WRITE_BACK_TO_D = 7'd7;
+parameter INST_SUBU = 7'd7;
+parameter WRITE_BACK_TO_D = 7'd8;
 
 reg [6:0] state = IDLE;
 
@@ -113,6 +114,14 @@ begin
 						$display("We decode instruction : sub");
 						instruction_state <= INST_SUB;
 					end
+
+					/* subu $d,$s,$t */
+					6'h23:
+					begin
+						$display("We decode instruction : subu");
+						instruction_state <= INST_SUBU;
+					end
+
 					endcase
 					state <= FETCH_REGISTERS;
 					instruction_type <= INST_TYPE_R;
@@ -264,6 +273,13 @@ begin
 			$display("We execute sub %d, %d", S, T);
 			/* We need to execute a trap on overflow */
 			// FIXME : TRAP ON OVERFLOW NOT IMPLEMENTED YET
+			D <= S - T;
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_SUBU:
+		begin
+			$display("We execute subu %d, %d", S, T);
 			D <= S - T;
 			state <= WRITE_BACK_TO_D;
 		end
