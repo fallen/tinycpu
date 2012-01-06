@@ -19,7 +19,11 @@ parameter INST_ADDI = 7'd6;
 parameter INST_SUBU = 7'd7;
 parameter INST_AND = 7'd8;
 parameter INST_OR = 7'd9;
-parameter WRITE_BACK_TO_D = 7'd10;
+parameter INST_XOR = 7'd10;
+parameter INST_NOR = 7'd11;
+parameter INST_SLT = 7'd12;
+parameter INST_SLL = 7'd13;
+parameter WRITE_BACK_TO_D = 7'd14;
 
 reg [6:0] state = IDLE;
 
@@ -96,6 +100,13 @@ begin
 				begin
 					/* if instruction[31:27] == 000000 then it's a type R instruction */
 					case (data_in[5:0])
+
+					/* sll $d,$t,shamt*/
+					6'd0:
+					begin
+						$display("We decode instruction : sll");
+						instruction_state = INST_SLL;
+					end
 					/* add $d,$s,$t */
 					6'h20:
 					begin
@@ -136,6 +147,27 @@ begin
 					begin
 						$display("We decode instruction : or");
 						instruction_state <= INST_OR;
+					end
+
+					/* xor $d,$s,$t */
+					6'h26:
+					begin
+						$display("We decode instruction : xor");
+						instruction_state <= INST_XOR;
+					end
+
+					/* nor $d,$s,$t */
+					6'h27:
+					begin
+						$display("We decode instruction : nor");
+						instruction_state <= INST_NOR;
+					end
+
+					/* slt $d,$s,$t */
+					6'h2A:
+					begin
+						$display("We decode instruction : slt");
+						instruction_state <= INST_SLT;
 					end
 
 					endcase
@@ -311,6 +343,39 @@ begin
 		begin
 			$display("We execute or %d, %d", S, T);
 			D <= S | T;
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_XOR:
+		begin
+			$display("We execute xor %d, %d", S, T);
+			D <= S ^ T;
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_NOR:
+		begin
+			$display("We execute nor %d, %d", S, T);
+			D <= ~ (S | T);
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_SLT:
+		begin
+			$display("We execute slt %d, %d", S, T);
+
+			if (S < T)
+				D <= 1;
+			else
+				D <= 0;
+
+			state <= WRITE_BACK_TO_D;
+		end
+
+		INST_SLL:
+		begin
+			$display("We execute sll $d, %d, %d", T, instruction[10:6]);
+			D <= T << instruction[10:6];
 			state <= WRITE_BACK_TO_D;
 		end
 
