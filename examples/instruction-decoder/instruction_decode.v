@@ -23,7 +23,8 @@ parameter INST_XOR = 7'd10;
 parameter INST_NOR = 7'd11;
 parameter INST_SLT = 7'd12;
 parameter INST_SLL = 7'd13;
-parameter WRITE_BACK_TO_D = 7'd14;
+parameter INST_SRL = 7'd14;
+parameter WRITE_BACK_TO_D = 7'd15;
 
 reg [6:0] state = IDLE;
 
@@ -107,6 +108,14 @@ begin
 						$display("We decode instruction : sll");
 						instruction_state = INST_SLL;
 					end
+
+					/* srl $d,$t,shamt*/
+					6'd2:
+					begin
+						$display("We decode instruction : srl");
+						instruction_state = INST_SRL;
+					end
+
 					/* add $d,$s,$t */
 					6'h20:
 					begin
@@ -376,6 +385,14 @@ begin
 		begin
 			$display("We execute sll $d, %d, %d", T, instruction[10:6]);
 			D <= T << instruction[10:6];
+			state <= WRITE_BACK_TO_D;
+		end
+
+		// FIXME : check SRL for compatibility with MIPS32
+		INST_SRL:
+		begin
+			$display("We execute srl $d, %d, %d", T, instruction[10:6]);
+			D <= T >> instruction[10:6];
 			state <= WRITE_BACK_TO_D;
 		end
 
