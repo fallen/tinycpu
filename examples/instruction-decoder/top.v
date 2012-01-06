@@ -47,7 +47,7 @@ begin
 	#20
 	reset = 0;
 
-	# 200 $stop;
+	# 250 $stop;
 	$finish;
 end
 
