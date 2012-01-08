@@ -144,7 +144,7 @@ begin
 						instruction_state <= INST_SUBU;
 					end
 
-					/* add $d,$s,$t */
+					/* and $d,$s,$t */
 					6'h24:
 					begin
 						$display("We decode instruction : and");
