@@ -350,7 +350,7 @@ begin
 		INST_SUBU:
 		begin
 			$display("We execute subu %d, %d", S, T);
-			D <= S - T;
+			D <= S + (~T) + 1;
 			state <= WRITE_BACK_TO_D;
 		end
 
