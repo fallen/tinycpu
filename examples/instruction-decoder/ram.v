@@ -1,4 +1,4 @@
-module ram(input clock, input enable, input [31:0] addr, input [31:0] di, output [31:0] do, input we);
+module ram(input clock, input enable, input [9:0] addr, input [31:0] di, output [31:0] do, input we);
 
 reg [31:0] mem [1023:0];
 reg [31:0] do;

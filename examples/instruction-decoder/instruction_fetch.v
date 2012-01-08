@@ -10,7 +10,7 @@ module instruction_fetch(
 
 	output [31:0] mem_di, 
 	output mem_en, 
-	output [31:0] mem_addr, 
+	output [9:0] mem_addr, 
 	input [31:0] mem_do, 
 	input mem_do_ack
 );
@@ -24,7 +24,7 @@ reg [31:0] data_out_reg = 32'd0;
 reg DOR_reg = 0;
 reg ack_prev_reg = 0;
 reg [31:0] data_in_buffer;
-reg [31:0] mem_addr_reg = 32'd0;
+reg [9:0] mem_addr_reg = 9'd0;
 reg mem_en_reg = 0;
 reg [31:0] data_in_cached = 32'd0;
 
@@ -44,7 +44,7 @@ begin
 		data_out_reg <= 0;
 		DOR_reg <= 0;
 		ack_prev_reg <= 0;
-		mem_addr_reg <= 32'd0;
+		mem_addr_reg <= 9'd0;
 		mem_en_reg <= 0;
 		data_in_cached <= 32'd0;
 	end

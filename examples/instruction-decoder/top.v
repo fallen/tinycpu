@@ -20,9 +20,9 @@ wire 	[31:0] mem_do;
 
 wire	[2:0] devices_mem_en;
 wire	[2:0] devices_burst_en;
-wire	[31:0] device_1_mem_addr;
-reg	[31:0] device_2_mem_addr = 32'd0;
-reg	[31:0] device_3_mem_addr = 32'd0;
+wire	[9:0] device_1_mem_addr;
+reg	[9:0] device_2_mem_addr = 9'd0;
+reg	[9:0] device_3_mem_addr = 9'd0;
 wire	[31:0] device_1_mem_di;
 reg	[31:0] device_2_mem_di = 32'd0;
 reg	[31:0] device_3_mem_di = 32'd0;

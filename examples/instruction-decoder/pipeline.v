@@ -8,7 +8,7 @@ module pipeline(
 	input [31:0] data_in,
 	output [31:0] data_out,
 
-	output [31:0] device_1_mem_addr,
+	output [9:0] device_1_mem_addr,
 	output [31:0] device_1_mem_di,
 	output device_1_burst_en,
 	output device_1_mem_en, 

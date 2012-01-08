@@ -16,9 +16,9 @@ input 	clk;
 input	reset;
 input	[2:0] devices_burst_en;
 input	[2:0] devices_mem_en;
-input	[31:0] device_1_mem_addr;
-input	[31:0] device_2_mem_addr;
-input	[31:0] device_3_mem_addr;
+input	[9:0] device_1_mem_addr;
+input	[9:0] device_2_mem_addr;
+input	[9:0] device_3_mem_addr;
 input	[31:0] device_1_mem_di;
 input	[31:0] device_2_mem_di;
 input	[31:0] device_3_mem_di;
@@ -32,8 +32,8 @@ parameter DEVICE_3 = 3'd2;
 parameter NO_ONE = 3'b111;
 
 reg	mem_enable = 0;
-reg	[31:0] mem_addr = 7'd0;
-reg	[31:0] mem_di = 7'd0;
+reg	[9:0] mem_addr = 10'd0;
+reg	[31:0] mem_di = 32'd0;
 reg	[2:0] current_slave = NO_ONE;
 reg	[2:0] previous_slave = NO_ONE;
 reg	mem_we = 0;
@@ -74,8 +74,8 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
-				mem_addr <= 7'd0;
-				mem_di <= 7'd0;
+				mem_addr <= 10'd0;
+				mem_di <= 32'd0;
 				mem_we <= 0;
                 	end
 			previous_slave <= NO_ONE;
@@ -109,8 +109,8 @@ begin
 				else
 				begin
                 	        	current_slave <= NO_ONE;
-					mem_addr <= 7'd0;
-					mem_di <= 7'd0;
+					mem_addr <= 10'd0;
+					mem_di <= 32'd0;
 					mem_we <= 0;
 				end
                 	end
@@ -137,8 +137,8 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
-				mem_addr <= 7'd0;
-				mem_di <= 7'd0;
+				mem_addr <= 10'd0;
+				mem_di <= 32'd0;
 				mem_we <= 0;
                 	end
 			devices_do_ack <= 3'b010;
@@ -164,8 +164,8 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
-				mem_addr <= 7'd0;
-				mem_di <= 7'd0;
+				mem_addr <= 10'd0;
+				mem_di <= 32'd0;
 				mem_we <= 0;
                 	end
 			devices_do_ack <= 3'b100;
