@@ -1,7 +1,9 @@
 module instruction_decoder(
 	input clk,
 	input reset,
+	/* Data Out Ready */
 	output DOR,
+	/* Data In Ready */
 	input DIR,
 	input ack_from_next,
 	output ack_prev,
@@ -9,6 +11,7 @@ module instruction_decoder(
 	output [31:0] data_out
 );
 
+/* values for the Finite State Machine of the decoder and executer */
 parameter IDLE = 7'd0;
 parameter WAITING_ACK = 7'd1;
 parameter FETCH_REGISTERS = 7'd2;
@@ -45,6 +48,7 @@ assign data_out = data_out_reg;
 assign DOR = DOR_reg;
 assign ack_prev = ack_prev_reg;
 
+/* The MIPS32 registers */
 reg [31:0] 	REG_AT = 32'd0, 
 		REG_V0 = 32'd0,
 		REG_V1 = 32'd0,
@@ -77,6 +81,7 @@ reg [31:0] 	REG_AT = 32'd0,
 		REG_FP = 32'd0,
 		REG_RA = 32'd0;
 
+/* The decoder and executer FSM (Finite State Machine) */
 always @(posedge clk)
 begin
 	if (reset)
