@@ -106,14 +106,14 @@ begin
 					6'd0:
 					begin
 						$display("We decode instruction : sll");
-						instruction_state = INST_SLL;
+						instruction_state <= INST_SLL;
 					end
 
 					/* srl $d,$t,shamt*/
 					6'd2:
 					begin
 						$display("We decode instruction : srl");
-						instruction_state = INST_SRL;
+						instruction_state <= INST_SRL;
 					end
 
 					/* add $d,$s,$t */
