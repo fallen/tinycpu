@@ -2,3 +2,10 @@ Tiny CPU is a small 32-bit CPU done mostly as a hobby for educational purposes.
 The primary goal is to be binary compatible with non-FPU MIPS32 architecture
 
 A few examples are using 8-bit wide registers and data-path.
+
+Content : 
+
+examples/pipeline : 3-stages pipeline implementation example, just a skeleton.
+examples/memory-controller : simple SRAM memory-controller, acts like a Round-Robin scheduler for memory accesses.
+examples/instruction-fetcher : a 1-stage pipeline featuring previous pipeline and memory-controller in order to fetch instructions from SRAM.
+examples/instruction-decoder : a 2-stages pipeline featuring previous pipeline, memory-controller and instruction fetcher in order to fetch, decode and execute MIPS32 instructions. This is a draft and a work in progress of a MIPS32 binary compatible softcore.
