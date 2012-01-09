@@ -28,7 +28,11 @@ parameter INST_SLT = 7'd12;
 parameter INST_SLL = 7'd13;
 parameter INST_SRL = 7'd14;
 parameter INST_SRA = 7'd15;
-parameter WRITE_BACK_TO_D = 7'd16;
+parameter INST_LD = 7'd16;
+parameter FETCH_FROM_MEM = 7'd17;
+parameter STORE_TO_MEM = 7'd18;
+parameter FETCH_FROM_MEM_WAIT_ACK = 7'd19;
+parameter WRITE_BACK = 7'd20;
 
 reg [6:0] state = IDLE;
 
@@ -43,7 +47,16 @@ reg DOR_reg = 0;
 reg ack_prev_reg = 0;
 reg [31:0] instruction;
 reg [6:0] instruction_state;
+reg memory_load;
+reg [3:0] fetch_width;
 reg [31:0] D, S, T; /* registers for instruction execution */
+
+reg [9:0] mem_addr;
+reg mem_we;
+reg mem_en;
+reg [31:0] mem_di;
+wire [31:0] mem_do;
+wire mem_ack;
 
 assign data_out = data_out_reg;
 assign DOR = DOR_reg;
@@ -207,14 +220,23 @@ begin
 					*  FETCH_REGISTERS state of the FSM.
 					*/
 
+					/* ld $t,C($s) */
+					6'h6:
+					begin
+						$display("We decode instruction : ld");
+						instruction_state <= INST_LD;
+						memory_load <= 1;
+						fetch_width <= 3'd4;
+					end
+
 					/* addi $t,$s,C */
 					6'h8:
 					begin
 						$display("We decode instruction : addi");
 						instruction_state <= INST_ADDI;
-						state <= FETCH_REGISTERS;
 					end
 					endcase
+					state <= FETCH_REGISTERS;
 					instruction_type <= INST_TYPE_I;
 				end
 			end
@@ -319,7 +341,75 @@ begin
 			5'd31:	T <= REG_RA;
 
 			endcase
-			state <= instruction_state;
+
+			case (instruction_type)
+			INST_TYPE_R:
+			begin
+				state <= instruction_state;
+			end
+
+			INST_TYPE_I:
+			begin
+				if (memory_load)
+					state <= FETCH_FROM_MEM;
+				else
+					state <= STORE_TO_MEM;
+			end
+
+			INST_TYPE_J:
+			begin
+				state <= instruction_state;
+			end
+
+			endcase
+		end
+
+		FETCH_FROM_MEM:
+		begin
+			/* memory accesses are 4-bytes aligned */
+			mem_addr <= { 2'd0, S[31:2] };
+			mem_we <= 0;
+			mem_di <= 32'd0;
+			mem_en <= 1;
+			state <= FETCH_FROM_MEM_WAIT_ACK;
+		end
+
+		FETCH_FROM_MEM_WAIT_ACK:
+		begin
+			/* Here I save the result in D but it means T
+			*  I just wanted to avoid duplicating the 
+			*  WRITE_BACK code for T register */
+		
+			if (mem_ack)
+			begin
+				case (S[1:0])
+				2'd0:
+				begin
+					case (fetch_width)
+					4'd1:	D <= { 24'd0, mem_do[31:24] };
+					4'd2:	D <= { 16'd0, mem_do[31:16] };
+					4'd4:	D <= mem_do;
+					endcase
+				end
+				2'd1:	D <= { 24'd0, mem_do[25:16] };
+				2'd2:
+				begin
+					case (fetch_width)
+					4'd1:	D <= { 24'd0, mem_do[15:8] };
+					4'd2:	D <= { 16'd0, mem_do[15:0] };
+					endcase
+				end
+				2'd3:	D <= { 24'd0, mem_do[7:0] };
+				endcase
+				mem_en <= 0;
+				mem_we <= 0;
+				mem_addr <= 10'd0;
+				state <= WRITE_BACK;
+			end
+			else
+			begin
+				state <= FETCH_FROM_MEM_WAIT_ACK;
+			end
 		end
 
 		INST_ADD:
@@ -328,14 +418,14 @@ begin
 			/* We need to execute a trap on overflow */
 			// FIXME : TRAP ON OVERFLOW NOT IMPLEMENTED YET
 			D <= S + T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_ADDU:
 		begin
 			$display("We execute addu %d, %d", S, T);
 			D <= S + T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_SUB:
@@ -344,42 +434,42 @@ begin
 			/* We need to execute a trap on overflow */
 			// FIXME : TRAP ON OVERFLOW NOT IMPLEMENTED YET
 			D <= S - T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_SUBU:
 		begin
 			$display("We execute subu %d, %d", S, T);
 			D <= S + (~T) + 1;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_AND:
 		begin
 			$display("We execute and %d, %d", S, T);
 			D <= S & T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_OR:
 		begin
 			$display("We execute or %d, %d", S, T);
 			D <= S | T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_XOR:
 		begin
 			$display("We execute xor %d, %d", S, T);
 			D <= S ^ T;
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_NOR:
 		begin
 			$display("We execute nor %d, %d", S, T);
 			D <= ~ (S | T);
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_SLT:
@@ -391,14 +481,14 @@ begin
 			else
 				D <= 0;
 
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_SLL:
 		begin
 			$display("We execute sll $d, %d, %d", T, instruction[10:6]);
 			D <= T << instruction[10:6];
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		// FIXME : check SRL for compatibility with MIPS32
@@ -406,20 +496,20 @@ begin
 		begin
 			$display("We execute srl $d, %d, %d", T, instruction[10:6]);
 			D <= T >> instruction[10:6];
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
 		INST_SRA:
 		begin
 			$display("We execute sra $d, %d, %d", T, instruction[10:6]);
 			D <= ~(~T >> instruction[10:6]);
-			state <= WRITE_BACK_TO_D;
+			state <= WRITE_BACK;
 		end
 
-		WRITE_BACK_TO_D:
+		WRITE_BACK:
 		begin
-			$display("We write back %d to D", D);
-			case(instruction[15:11])
+			$display("We write back %d to %s", D, (instruction_type == INST_TYPE_R) ? "D" : "T");
+			case( (instruction_type == INST_TYPE_R) ? instruction[15:11] : instruction[20:16])
 			/* $zero (aka $0) is constant 0 */				
 			5'd0:	$display("wtf ?");
 			/* $at (aka $1) is assembler temporary */
