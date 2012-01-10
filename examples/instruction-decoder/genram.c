@@ -5,10 +5,13 @@ int main(void) {
 
 	unsigned int i;
 
-	printf("11820\n"); /* add $2,$0,$1 */
+	printf("00430820\n");
+	printf("00431020\n");
+	printf("00221820\n");
+	printf("8C050014\n");
 
-	for (i = 1 ; i < 1024 ; ++i)
-		printf("%d\n", i % 1024);
+	for (i = 4 ; i < 1024 ; ++i)
+		printf("%08X\n", i % 1024);
 
 	return EXIT_SUCCESS;
 }

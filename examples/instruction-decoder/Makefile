@@ -13,7 +13,7 @@ genram: genram.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
-	$(RM) -rf top genram ram.data
+	$(RM) -rf top genram
 
 top.vcd: top
 	$(MAKE) run

@@ -62,7 +62,7 @@ begin
 				mem_en_reg <= 1;
 				DOR_reg <= 0;
 				data_in_cached <= data_in;
-				mem_addr_reg <= data_in;
+				mem_addr_reg <= { 2'd0, data_in[9:2] };
 			end
 			else
 			begin

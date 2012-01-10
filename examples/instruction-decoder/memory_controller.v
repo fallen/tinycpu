@@ -103,7 +103,7 @@ begin
 				if (devices_burst_en[0] && devices_mem_en[0])
 				begin
 					devices_do_ack <= 3'b001;
-					mem_addr <= device_1_mem_addr + 1;
+					mem_addr <= device_1_mem_addr + 4;
 					mem_di <= device_1_mem_di;
 				end
 				else

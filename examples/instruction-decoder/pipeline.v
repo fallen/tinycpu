@@ -10,9 +10,14 @@ module pipeline(
 
 	output [9:0] device_1_mem_addr,
 	output [31:0] device_1_mem_di,
-	output device_1_burst_en,
-	output device_1_mem_en, 
-	input device_1_do_ack, 
+	output [9:0] device_2_mem_addr,
+	output [31:0] device_2_mem_di,
+	output [1:0] devices_burst_en,
+	output [1:0] devices_mem_we, 
+	output [1:0] devices_mem_en, 
+	input [1:0] devices_do_ack, 
+
+
 	input [31:0] mem_do
 );
 
@@ -52,6 +57,8 @@ assign ack_to_ID = ack_to_pipeline;
 
 assign ack_to_IF = ack_from_ID;
 
+assign devices_mem_we[0] = 0;
+
 instruction_fetch IF (
 	clk,
 	reset,
@@ -63,10 +70,10 @@ instruction_fetch IF (
 	data_out_IF,
 	
 	device_1_mem_di,
-	device_1_mem_en, 
+	devices_mem_en[0], 
 	device_1_mem_addr,
 	mem_do, 
-	device_1_do_ack
+	devices_do_ack[0]
 );
 
 instruction_decoder ID (
@@ -77,7 +84,14 @@ instruction_decoder ID (
 	ack_to_ID,
 	ack_from_ID,
 	data_in_ID,
-	data_out_ID
+	data_out_ID,
+
+	device_2_mem_di,
+	devices_mem_en[1],
+	device_2_mem_addr,
+	devices_mem_we[1],
+	mem_do,
+	devices_do_ack[1]
 );
 
 endmodule

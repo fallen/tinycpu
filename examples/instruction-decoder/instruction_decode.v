@@ -8,7 +8,14 @@ module instruction_decoder(
 	input ack_from_next,
 	output ack_prev,
 	input [31:0] data_in,
-	output [31:0] data_out
+	output [31:0] data_out,
+
+	output [31:0] mem_di, 
+	output mem_en, 
+	output [9:0] mem_addr, 
+	output mem_we, 
+	input [31:0] mem_do, 
+	input mem_do_ack
 );
 
 /* values for the Finite State Machine of the decoder and executer */
@@ -29,10 +36,11 @@ parameter INST_SLL = 7'd13;
 parameter INST_SRL = 7'd14;
 parameter INST_SRA = 7'd15;
 parameter INST_LD = 7'd16;
-parameter FETCH_FROM_MEM = 7'd17;
-parameter STORE_TO_MEM = 7'd18;
-parameter FETCH_FROM_MEM_WAIT_ACK = 7'd19;
-parameter WRITE_BACK = 7'd20;
+parameter INST_LW = 7'd17;
+parameter FETCH_FROM_MEM = 7'd18;
+parameter STORE_TO_MEM = 7'd19;
+parameter FETCH_FROM_MEM_WAIT_ACK = 7'd20;
+parameter WRITE_BACK = 7'd21;
 
 reg [6:0] state = IDLE;
 
@@ -50,13 +58,18 @@ reg [6:0] instruction_state;
 reg memory_load;
 reg [3:0] fetch_width;
 reg [31:0] D, S, T; /* registers for instruction execution */
+reg [15:0] C; /* 16-bits immediate value */
+reg [15:0] address;
 
-reg [9:0] mem_addr;
-reg mem_we;
-reg mem_en;
-reg [31:0] mem_di;
-wire [31:0] mem_do;
-wire mem_ack;
+reg [9:0] mem_addr_reg;
+reg mem_we_reg;
+reg mem_en_reg;
+reg [31:0] mem_di_reg;
+
+assign mem_addr = mem_addr_reg;
+assign mem_di = mem_di_reg;
+assign mem_we = mem_we_reg;
+assign mem_en = mem_en_reg;
 
 assign data_out = data_out_reg;
 assign DOR = DOR_reg;
@@ -65,7 +78,7 @@ assign ack_prev = ack_prev_reg;
 /* The MIPS32 registers */
 reg [31:0] 	REG_AT = 32'd0, 
 		REG_V0 = 32'd0,
-		REG_V1 = 32'd0,
+		REG_V1 = 32'd1,
 		REG_A0 = 32'd0,
 		REG_A1 = 32'd0,
 		REG_A2 = 32'd0,
@@ -104,6 +117,10 @@ begin
 		data_out_reg <= 0;
 		DOR_reg <= 0;
 		ack_prev_reg <= 0;
+		mem_addr_reg <= 10'd0;
+		mem_di_reg <= 32'd0;
+		mem_en_reg <= 0;
+		mem_we_reg <= 0;
 	end
 	else
 	begin
@@ -113,10 +130,10 @@ begin
 		begin
 			if (DIR)
 			begin
-				$display("instruction decoder receives input_data %d", data_in);
+				$display("instruction decoder receives input_data 0x%08X", data_in);
 				ack_prev_reg <= 1;
 				instruction <= data_in;
-				if (data_in[31:27] == 6'd0)
+				if (data_in[31:26] == 6'd0)
 				begin
 					/* if instruction[31:27] == 000000 then it's a type R instruction */
 					case (data_in[5:0])
@@ -211,7 +228,7 @@ begin
 				end
 				else
 				begin
-					case (data_in[31:27])
+					case (data_in[31:26])
 					/*
 					*  Most instructions here are type I except two type J.
 					*  since type J does not need to fetch any register, 
@@ -226,7 +243,7 @@ begin
 						$display("We decode instruction : ld");
 						instruction_state <= INST_LD;
 						memory_load <= 1;
-						fetch_width <= 3'd4;
+						fetch_width <= 4'd8;
 					end
 
 					/* addi $t,$s,C */
@@ -235,11 +252,22 @@ begin
 						$display("We decode instruction : addi");
 						instruction_state <= INST_ADDI;
 					end
+
+					/* lw $t,C($s) */
+					6'h23:
+					begin
+						$display("We decode instruction : lw");
+						instruction_state <= INST_LW;
+						memory_load <= 1;
+						fetch_width <= 4'd4;
+					end
 					endcase
 					state <= FETCH_REGISTERS;
 					instruction_type <= INST_TYPE_I;
 				end
 			end
+			mem_we_reg <= 0;
+			mem_en_reg <= 0;
 		end
 
 		FETCH_REGISTERS:
@@ -354,6 +382,7 @@ begin
 					state <= FETCH_FROM_MEM;
 				else
 					state <= STORE_TO_MEM;
+				C <= instruction[15:0];
 			end
 
 			INST_TYPE_J:
@@ -367,10 +396,12 @@ begin
 		FETCH_FROM_MEM:
 		begin
 			/* memory accesses are 4-bytes aligned */
-			mem_addr <= { 2'd0, S[31:2] };
-			mem_we <= 0;
-			mem_di <= 32'd0;
-			mem_en <= 1;
+			mem_addr_reg <= { 2'd0, (S + C) >> 2 };
+			mem_we_reg <= 0;
+			mem_di_reg <= 32'd0;
+			mem_en_reg <= 1;
+			$display("Fetching data from memory @ 0x%04X", (S + C));
+			address <= S + C;
 			state <= FETCH_FROM_MEM_WAIT_ACK;
 		end
 
@@ -380,9 +411,9 @@ begin
 			*  I just wanted to avoid duplicating the 
 			*  WRITE_BACK code for T register */
 		
-			if (mem_ack)
+			if (mem_do_ack)
 			begin
-				case (S[1:0])
+				case (address[1:0])
 				2'd0:
 				begin
 					case (fetch_width)
@@ -401,9 +432,10 @@ begin
 				end
 				2'd3:	D <= { 24'd0, mem_do[7:0] };
 				endcase
-				mem_en <= 0;
-				mem_we <= 0;
-				mem_addr <= 10'd0;
+				$display("Fetched 0x%08X from memory @ 0x%04X", mem_do, address);
+				mem_en_reg <= 0;
+				mem_we_reg <= 0;
+				mem_addr_reg <= 10'd0;
 				state <= WRITE_BACK;
 			end
 			else

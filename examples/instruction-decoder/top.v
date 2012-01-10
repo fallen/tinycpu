@@ -1,7 +1,7 @@
 module top;
 
 parameter WAITING_ACK_FROM_PIPELINE = 0;
-parameter PIPELINE_HAS_ACKED = 1;
+parameter PIPELINE_ACKED = 1;
 
 parameter WAITING_DOR_FROM_PIPELINE = 0;
 parameter PIPELINE_IS_ACKED = 1;
@@ -21,12 +21,12 @@ wire 	[31:0] mem_do;
 wire	[2:0] devices_mem_en;
 wire	[2:0] devices_burst_en;
 wire	[9:0] device_1_mem_addr;
-reg	[9:0] device_2_mem_addr = 9'd0;
+wire	[9:0] device_2_mem_addr;
 reg	[9:0] device_3_mem_addr = 9'd0;
 wire	[31:0] device_1_mem_di;
-reg	[31:0] device_2_mem_di = 32'd0;
+wire	[31:0] device_2_mem_di;
 reg	[31:0] device_3_mem_di = 32'd0;
-reg	[2:0] devices_mem_we = 3'd0;
+wire	[2:0] devices_mem_we;
 wire	[2:0] devices_do_ack;
 wire	mem_en;
 
@@ -35,8 +35,10 @@ reg	[31:0] PC = 32'd0;
 always 	#5 clk = !clk;
 
 assign 	ack_to_pipeline = ack_to_pipeline_reg;
-assign	devices_mem_en[2:1] = 2'b00;
-assign	devices_burst_en[2:1] = 2'b00;
+assign	devices_mem_en[2] = 0;
+assign	devices_burst_en[2] = 0;
+assign	devices_mem_we[2] = 0;
+assign	devices_do_ack[2] = 0;
 
 initial
 begin
@@ -47,7 +49,7 @@ begin
 	#20
 	reset = 0;
 
-	# 250 $stop;
+	# 350 $stop;
 	$finish;
 end
 
@@ -78,9 +80,12 @@ pipeline p(
 
 	device_1_mem_addr,
 	device_1_mem_di,
-	devices_burst_en[0],
-	devices_mem_en[0],
-	devices_do_ack[0], 
+	device_2_mem_addr,
+	device_2_mem_di,
+	devices_burst_en[1:0],
+	devices_mem_we[1:0], 
+	devices_mem_en[1:0],
+	devices_do_ack[1:0], 
 	mem_do
 );
 
@@ -103,8 +108,8 @@ begin
 			if (ack_from_pipeline)
 			begin
 				pipeline_DIR <= 0;
-				PC <= PC + 1;
-				state <= PIPELINE_HAS_ACKED;
+				PC <= PC + 4;
+				state <= PIPELINE_ACKED;
 			end
 			else
 			begin
@@ -114,11 +119,11 @@ begin
 			end
 		end
 
-		PIPELINE_HAS_ACKED:
+		PIPELINE_ACKED:
 		begin
 			if (ack_from_pipeline)
 			begin
-				state <= PIPELINE_HAS_ACKED;
+				state <= PIPELINE_ACKED;
 			end
 			else
 			begin
