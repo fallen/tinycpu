@@ -56,6 +56,7 @@ reg ack_prev_reg = 0;
 reg [31:0] instruction;
 reg [6:0] instruction_state;
 reg memory_load;
+reg signed_load;
 reg [3:0] fetch_width;
 reg [31:0] D, S, T; /* registers for instruction execution */
 reg [15:0] C; /* 16-bits immediate value */
@@ -121,6 +122,7 @@ begin
 		mem_di_reg <= 32'd0;
 		mem_en_reg <= 0;
 		mem_we_reg <= 0;
+		signed_load <= 0;
 	end
 	else
 	begin
@@ -244,6 +246,7 @@ begin
 						instruction_state <= INST_LD;
 						memory_load <= 1;
 						fetch_width <= 4'd8;
+						signed_load <= 0;
 					end
 
 					/* addi $t,$s,C */
@@ -251,6 +254,7 @@ begin
 					begin
 						$display("We decode instruction : addi");
 						instruction_state <= INST_ADDI;
+						signed_load <= 0;
 					end
 
 					/* lw $t,C($s) */
@@ -259,15 +263,16 @@ begin
 						$display("We decode instruction : lw");
 						memory_load <= 1;
 						fetch_width <= 4'd4;
+						signed_load <= 0;
 					end
 
 					/* lh $t,C($s) */
-					// FIXME : This should be a SIGNED load
 					6'h21:
 					begin
 						$display("We decode instruction : lh");
 						memory_load <= 1;
 						fetch_width <= 4'd2;
+						signed_load <= 1;
 					end
 
 					/* lhu $t,C($s) */
@@ -276,6 +281,7 @@ begin
 						$display("We decode instruction : lhu");
 						memory_load <= 1;
 						fetch_width <= 4'd2;
+						signed_load <= 0;
 					end
 
 					/* lb $t,C($s) */
@@ -285,6 +291,7 @@ begin
 						$display("We decode instruction : lb");
 						memory_load <= 1;
 						fetch_width <= 4'd1;
+						signed_load <= 1;
 					end
 
 					/* lbu $t,C($s) */
@@ -293,6 +300,7 @@ begin
 						$display("We decode instruction : lbu");
 						memory_load <= 1;
 						fetch_width <= 4'd1;
+						signed_load <= 0;
 					end
 
 					/* sw $t,C($s) */
@@ -486,20 +494,20 @@ begin
 				2'd0:
 				begin
 					case (fetch_width)
-					4'd1:	D <= { 24'd0, mem_do[31:24] };
-					4'd2:	D <= { 16'd0, mem_do[31:16] };
+					4'd1:	D <= { signed_load ? {24{mem_do[31]}} : 24'd0, mem_do[31:24] };
+					4'd2:	D <= { signed_load ? {16{mem_do[31]}} : 16'd0, mem_do[31:16] };
 					4'd4:	D <= mem_do;
 					endcase
 				end
-				2'd1:	D <= { 24'd0, mem_do[25:16] };
+				2'd1:	D <= { signed_load ? {24{ mem_do[25]}} : 24'd0, mem_do[25:16] };
 				2'd2:
 				begin
 					case (fetch_width)
-					4'd1:	D <= { 24'd0, mem_do[15:8] };
-					4'd2:	D <= { 16'd0, mem_do[15:0] };
+					4'd1:	D <= { signed_load ? {24{mem_do[15]}} : 24'd0, mem_do[15:8] };
+					4'd2:	D <= { signed_load ? {16{mem_do[15]}} : 16'd0, mem_do[15:0] };
 					endcase
 				end
-				2'd3:	D <= { 24'd0, mem_do[7:0] };
+				2'd3:	D <= { signed_load ? {24{mem_do[7]}} : 24'd0, mem_do[7:0] };
 				endcase
 				$display("Fetched 0x%08X from memory @ 0x%04X", mem_do, address);
 				mem_en_reg <= 0;
