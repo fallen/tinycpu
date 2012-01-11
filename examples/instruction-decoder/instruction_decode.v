@@ -523,6 +523,10 @@ begin
 				mem_addr_reg <= 10'd0;
 				state <= WRITE_BACK;
 			end
+			else
+			begin
+				state <= STORE_TO_MEM_WAIT_ACK;
+			end
 		end
 
 		INST_ADD:
