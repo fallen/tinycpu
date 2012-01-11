@@ -36,10 +36,10 @@ parameter INST_SLL = 7'd13;
 parameter INST_SRL = 7'd14;
 parameter INST_SRA = 7'd15;
 parameter INST_LD = 7'd16;
-parameter INST_LW = 7'd17;
-parameter FETCH_FROM_MEM = 7'd18;
+parameter FETCH_FROM_MEM = 7'd17;
+parameter FETCH_FROM_MEM_WAIT_ACK = 7'd18;
 parameter STORE_TO_MEM = 7'd19;
-parameter FETCH_FROM_MEM_WAIT_ACK = 7'd20;
+parameter STORE_TO_MEM_WAIT_ACK = 7'd20;
 parameter WRITE_BACK = 7'd21;
 
 reg [6:0] state = IDLE;
@@ -78,7 +78,7 @@ assign ack_prev = ack_prev_reg;
 /* The MIPS32 registers */
 reg [31:0] 	REG_AT = 32'd0, 
 		REG_V0 = 32'd0,
-		REG_V1 = 32'd1,
+		REG_V1 = 32'd0,
 		REG_A0 = 32'd0,
 		REG_A1 = 32'd0,
 		REG_A2 = 32'd0,
@@ -257,9 +257,66 @@ begin
 					6'h23:
 					begin
 						$display("We decode instruction : lw");
-						instruction_state <= INST_LW;
 						memory_load <= 1;
 						fetch_width <= 4'd4;
+					end
+
+					/* lh $t,C($s) */
+					// FIXME : This should be a SIGNED load
+					6'h21:
+					begin
+						$display("We decode instruction : lh");
+						memory_load <= 1;
+						fetch_width <= 4'd2;
+					end
+
+					/* lhu $t,C($s) */
+					6'h21:
+					begin
+						$display("We decode instruction : lhu");
+						memory_load <= 1;
+						fetch_width <= 4'd2;
+					end
+
+					/* lb $t,C($s) */
+					// FIXME : This should be a SIGNED load
+					6'h20:
+					begin
+						$display("We decode instruction : lb");
+						memory_load <= 1;
+						fetch_width <= 4'd1;
+					end
+
+					/* lbu $t,C($s) */
+					6'h24:
+					begin
+						$display("We decode instruction : lbu");
+						memory_load <= 1;
+						fetch_width <= 4'd1;
+					end
+
+					/* sw $t,C($s) */
+					6'h2B:
+					begin
+						$display("We decode instruction : sw");
+						memory_load <= 0;
+						fetch_width <= 4'd4;
+					end
+
+					/* sh $t,C($s) */
+					6'h29:
+					begin
+						$display("We decode instruction : sh");
+						memory_load <= 0;
+						fetch_width <= 4'd2;
+					end
+
+					/* sb $t,C($s) */
+					6'h28:
+					begin
+						$display("We decode instruction : sb");
+						memory_load <= 0;
+						fetch_width <= 4'd1;
 					end
 					endcase
 					state <= FETCH_REGISTERS;
@@ -405,6 +462,18 @@ begin
 			state <= FETCH_FROM_MEM_WAIT_ACK;
 		end
 
+		STORE_TO_MEM:
+		begin
+			/* memory accesses are 4-bytes aligned */
+			mem_addr_reg <= { 2'd0, (S + C) >> 2 };
+			mem_we_reg <= 1;
+			mem_di_reg <= T;
+			mem_en_reg <= 1;
+			$display("Storing data 0x%08X to memory @ 0x%04X", T, (S + C));
+			address <= S + C;
+			state <= STORE_TO_MEM_WAIT_ACK;
+		end
+
 		FETCH_FROM_MEM_WAIT_ACK:
 		begin
 			/* Here I save the result in D but it means T
@@ -441,6 +510,18 @@ begin
 			else
 			begin
 				state <= FETCH_FROM_MEM_WAIT_ACK;
+			end
+		end
+
+		STORE_TO_MEM_WAIT_ACK:
+		begin
+			if (mem_do_ack)
+			begin
+				$display("Stored 0x%08X to memory @ 0x%04X", mem_do, address);
+				mem_en_reg <= 0;
+				mem_we_reg <= 0;
+				mem_addr_reg <= 10'd0;
+				state <= WRITE_BACK;
 			end
 		end
 
