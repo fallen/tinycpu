@@ -12,6 +12,7 @@ module instruction_decoder(
 
 	output [31:0] mem_di, 
 	output mem_en, 
+	output [3:0] mem_bank_select,
 	output [9:0] mem_addr, 
 	output mem_we, 
 	input [31:0] mem_do, 
@@ -66,11 +67,13 @@ reg [9:0] mem_addr_reg;
 reg mem_we_reg;
 reg mem_en_reg;
 reg [31:0] mem_di_reg;
+reg [3:0]  mem_bank_select_reg;
 
 assign mem_addr = mem_addr_reg;
 assign mem_di = mem_di_reg;
 assign mem_we = mem_we_reg;
 assign mem_en = mem_en_reg;
+assign mem_bank_select = mem_bank_select_reg;
 
 assign data_out = data_out_reg;
 assign DOR = DOR_reg;
@@ -123,6 +126,7 @@ begin
 		mem_en_reg <= 0;
 		mem_we_reg <= 0;
 		signed_load <= 0;
+		mem_bank_select_reg <= 4'b1111;
 	end
 	else
 	begin
@@ -446,7 +450,9 @@ begin
 				if (memory_load)
 					state <= FETCH_FROM_MEM;
 				else
+				begin
 					state <= STORE_TO_MEM;
+				end
 				C <= instruction[15:0];
 			end
 
@@ -462,12 +468,14 @@ begin
 		begin
 			/* memory accesses are 4-bytes aligned */
 			mem_addr_reg <= { 2'd0, (S + C) >> 2 };
+			address <= S + C;
 			mem_we_reg <= 0;
 			mem_di_reg <= 32'd0;
 			mem_en_reg <= 1;
+			mem_bank_select_reg <= 4'b1111;
 			$display("Fetching data from memory @ 0x%04X", (S + C));
-			address <= S + C;
 			state <= FETCH_FROM_MEM_WAIT_ACK;
+
 		end
 
 		STORE_TO_MEM:

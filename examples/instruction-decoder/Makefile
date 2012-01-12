@@ -1,4 +1,4 @@
-all: top ram.data
+all: top ram0.data ram1.data ram2.data ram3.data
 
 run: all
 	vvp top
@@ -6,8 +6,9 @@ run: all
 top: top.v pipeline.v instruction_fetch.v ram.v memory_controller.v instruction_decode.v
 	iverilog -o $@ $^
 
-ram.data: genram
-	./genram > ram.data
+%.data: genram
+	./genram
+	chmod 640 ram*.data
 
 genram: genram.c
 	$(CC) $(CFLAGS) $^ -o $@

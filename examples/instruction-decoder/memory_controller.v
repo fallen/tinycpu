@@ -8,6 +8,9 @@ module memory_controller(clk,
 			 device_1_mem_di,
 			 device_2_mem_di,
 			 device_3_mem_di,
+			 device_1_bank_select,
+			 device_2_bank_select,
+			 device_3_bank_select,
 			 devices_mem_we,
 			 devices_do_ack,
 			 mem_do);
@@ -22,6 +25,9 @@ input	[9:0] device_3_mem_addr;
 input	[31:0] device_1_mem_di;
 input	[31:0] device_2_mem_di;
 input	[31:0] device_3_mem_di;
+input	[3:0] device_1_bank_select;
+input	[3:0] device_2_bank_select;
+input	[3:0] device_3_bank_select;
 input	[2:0] devices_mem_we;
 output	[2:0] devices_do_ack;
 output	[31:0] mem_do;
@@ -38,6 +44,7 @@ reg	[2:0] current_slave = NO_ONE;
 reg	[2:0] previous_slave = NO_ONE;
 reg	mem_we = 0;
 reg	[2:0] devices_do_ack = 3'd0;
+reg	[3:0] mem_bank_select = 4'b1111;
 
 always @(posedge clk)
 begin
@@ -53,6 +60,7 @@ begin
 			if (devices_mem_en[0] && previous_slave != DEVICE_1)
                 	begin
                 	        current_slave <= DEVICE_1;
+				mem_bank_select <= device_1_bank_select;
 				mem_addr <= device_1_mem_addr;
 				mem_di <= device_1_mem_di;
 				mem_we <= devices_mem_we[0];
@@ -60,6 +68,7 @@ begin
                 	else if (devices_mem_en[1] && previous_slave != DEVICE_2)
                 	begin
                 	        current_slave <= DEVICE_2;
+				mem_bank_select <= device_2_bank_select;
 				mem_addr <= device_2_mem_addr;
 				mem_di <= device_2_mem_di;
 				mem_we <= devices_mem_we[1];
@@ -67,6 +76,7 @@ begin
                 	else if (devices_mem_en[2] && previous_slave != DEVICE_3)
                 	begin
                 	        current_slave <= DEVICE_3;
+				mem_bank_select <= device_3_bank_select;
 				mem_addr <= device_3_mem_addr;
 				mem_di <= device_3_mem_di;
 				mem_we <= devices_mem_we[2];
@@ -74,6 +84,7 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
+				mem_bank_select <= 4'd0;
 				mem_addr <= 10'd0;
 				mem_di <= 32'd0;
 				mem_we <= 0;
@@ -87,6 +98,7 @@ begin
 	                if (devices_mem_en[1])
 	                begin
 	                        current_slave <= DEVICE_2;
+				mem_bank_select <= device_2_bank_select;
 				mem_addr <= device_2_mem_addr;
 				mem_di <= device_2_mem_di;
 				mem_we <= devices_mem_we[1];
@@ -94,6 +106,7 @@ begin
 	                else if (devices_mem_en[2])
 	                begin
 	                        current_slave <= DEVICE_3;
+				mem_bank_select <= device_3_bank_select;
 				mem_addr <= device_3_mem_addr;
 				mem_di <= device_3_mem_di;
 				mem_we <= devices_mem_we[2];
@@ -109,6 +122,7 @@ begin
 				else
 				begin
                 	        	current_slave <= NO_ONE;
+					mem_bank_select <= 4'd0;
 					mem_addr <= 10'd0;
 					mem_di <= 32'd0;
 					mem_we <= 0;
@@ -123,6 +137,7 @@ begin
 			if (devices_mem_en[2])
 			begin
 				current_slave <= DEVICE_3;
+				mem_bank_select <= device_3_bank_select;
 				mem_addr <= device_3_mem_addr;
 				mem_di <= device_3_mem_di;
 				mem_we <= devices_mem_we[2];
@@ -130,6 +145,7 @@ begin
 			else if (devices_mem_en[0])
 			begin
 				current_slave <= DEVICE_1;
+				mem_bank_select <= device_1_bank_select;
 				mem_addr <= device_1_mem_addr;
 				mem_di <= device_1_mem_di;
 				mem_we <= devices_mem_we[0];
@@ -137,6 +153,7 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
+				mem_bank_select <= 4'd0;
 				mem_addr <= 10'd0;
 				mem_di <= 32'd0;
 				mem_we <= 0;
@@ -150,6 +167,7 @@ begin
 			if (devices_mem_en[0])
 			begin
 				current_slave <= DEVICE_1;
+				mem_bank_select <= device_1_bank_select;
 				mem_addr <= device_1_mem_addr;
 				mem_di <= device_1_mem_di;
 				mem_we <= devices_mem_we[0];
@@ -157,6 +175,7 @@ begin
 			else if (devices_mem_en[1])
 			begin
 				current_slave <= DEVICE_2;
+				mem_bank_select <= device_2_bank_select;
 				mem_addr <= device_2_mem_addr;
 				mem_di <= device_2_mem_di;
 				mem_we <= devices_mem_we[1];
@@ -164,6 +183,7 @@ begin
                 	else
                 	begin
                 	        current_slave <= NO_ONE;
+				mem_bank_select <= 4'd0;
 				mem_addr <= 10'd0;
 				mem_di <= 32'd0;
 				mem_we <= 0;
@@ -175,6 +195,6 @@ begin
 	end
 end
 
-ram mem(clk, ~reset, mem_addr, mem_di, mem_do, mem_we);
+ram mem(clk, mem_bank_select, ~reset, mem_addr, mem_di, mem_do, mem_we);
 
 endmodule

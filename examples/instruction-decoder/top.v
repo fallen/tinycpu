@@ -26,6 +26,8 @@ reg	[9:0] device_3_mem_addr = 9'd0;
 wire	[31:0] device_1_mem_di;
 wire	[31:0] device_2_mem_di;
 reg	[31:0] device_3_mem_di = 32'd0;
+wire	[3:0]  device_2_bank_select;
+reg	[3:0]  device_3_bank_select = 4'd1;
 wire	[2:0] devices_mem_we;
 wire	[2:0] devices_do_ack;
 wire	mem_en;
@@ -63,9 +65,13 @@ memory_controller mem_cont(clk,
 			   device_1_mem_di,
 			   device_2_mem_di,
 			   device_3_mem_di,
+			   4'b1111,
+			   device_2_bank_select,
+			   device_3_bank_select,
 			   devices_mem_we,
 			   devices_do_ack,
-			   mem_do);
+			   mem_do
+);
 
 
 pipeline p(
@@ -82,6 +88,7 @@ pipeline p(
 	device_1_mem_di,
 	device_2_mem_addr,
 	device_2_mem_di,
+	device_2_bank_select,
 	devices_burst_en[1:0],
 	devices_mem_we[1:0], 
 	devices_mem_en[1:0],

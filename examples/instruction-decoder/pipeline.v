@@ -12,6 +12,7 @@ module pipeline(
 	output [31:0] device_1_mem_di,
 	output [9:0] device_2_mem_addr,
 	output [31:0] device_2_mem_di,
+	output [3:0]  device_2_bank_select,
 	output [1:0] devices_burst_en,
 	output [1:0] devices_mem_we, 
 	output [1:0] devices_mem_en, 
@@ -88,6 +89,7 @@ instruction_decoder ID (
 
 	device_2_mem_di,
 	devices_mem_en[1],
+	device_2_bank_select,
 	device_2_mem_addr,
 	devices_mem_we[1],
 	mem_do,
