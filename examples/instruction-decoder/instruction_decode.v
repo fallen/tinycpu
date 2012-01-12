@@ -600,7 +600,7 @@ begin
 			$display("We execute sub %d, %d", S, T);
 			/* We need to execute a trap on overflow */
 			// FIXME : TRAP ON OVERFLOW NOT IMPLEMENTED YET
-			D <= S - T;
+			D <= S + (~T) + 1;
 			state <= WRITE_BACK;
 		end
 
