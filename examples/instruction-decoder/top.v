@@ -101,7 +101,6 @@ begin
 	if (reset)
 	begin
 		state <= WAITING_ACK_FROM_PIPELINE;
-		ack_to_pipeline_reg <= 0;
 		pipeline_DIR <= 0;
 		data_in <= 0;
 		PC <= 32'd0;
@@ -148,31 +147,39 @@ end
 always @(posedge clk)
 begin
 
-	case (ack_state)
-	
-	WAITING_DOR_FROM_PIPELINE:
+	if (reset)
 	begin
-		if (pipeline_DOR)
-		begin
-			data_out_reg <= data_out;
-			$display("Pipeline outputs %d", data_out);
-			ack_to_pipeline_reg <= 1;
-			ack_state <= PIPELINE_IS_ACKED;
-		end
-		else
-		begin
-			ack_state <= WAITING_DOR_FROM_PIPELINE;
-			ack_to_pipeline_reg <= 0;
-		end
-	end
-
-	PIPELINE_IS_ACKED:
-	begin
-		$display("We acked the pipeline");
 		ack_to_pipeline_reg <= 0;
-		ack_state <= WAITING_DOR_FROM_PIPELINE;
 	end
-	endcase
+	else
+	begin
+		case (ack_state)
+
+		WAITING_DOR_FROM_PIPELINE:
+		begin
+			if (pipeline_DOR)
+			begin
+				data_out_reg <= data_out;
+				$display("Pipeline outputs %d", data_out);
+				ack_to_pipeline_reg <= 1;
+				ack_state <= PIPELINE_IS_ACKED;
+			end
+			else
+			begin
+				ack_state <= WAITING_DOR_FROM_PIPELINE;
+				ack_to_pipeline_reg <= 0;
+			end
+		end
+
+		PIPELINE_IS_ACKED:
+		begin
+			$display("We acked the pipeline");
+			ack_to_pipeline_reg <= 0;
+			ack_state <= WAITING_DOR_FROM_PIPELINE;
+		end
+
+		endcase
+	end
 end
 
 endmodule
