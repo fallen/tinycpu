@@ -1,25 +1,28 @@
 /*
- * This is the L1 Instruction Cache for TinyCPU
+ * This is the L1 Data Cache for TinyCPU
  * Author : Yann Sionneau <yann.sionneau@gmail.com>
  */
-module icache( 
+module dcache( 
 	input clk,
 	input reset,
 
 	input [15:0] addr, // 64 kB of total memory
 	input en,
+	input we,
 
 	output [31:0] cache_do,
 	output ack,
 
 	output [15:0] main_memory_addr,
 	output main_memory_en,
+	output main_memory_we,
+	output [31:0] main_memory_di,
 	input main_memory_ack,
 	input [31:0] main_memory_do
 );
 
 /*
-* I-Cache size is 8 kB
+* D-Cache size is 8 kB
 * 1024 lines of 2 words ( 64 bits )
 */
 
